@@ -1,0 +1,135 @@
+\documentclass[a4paper, 12pt]{article}
+\include{includes/packages}
+\include{includes/consts}
+\include{includes/colors}
+\include{includes/styles}
+\include{includes/listings}
+\begin{document}
+\input{includes/titlepage}
+\pagebreak
+\tableofcontents
+\newpage
+% Основная часть --------------------------------------------------------------------------------------------
+\section*{Задание}
+\addcontentsline{toc}{section}{Задание}
+\subsection*{Цель}
+Целью лабораторной работы является приобретение навыков работы со Spark.
+\section{Ход работы}
+Для выполнения использовался тот же docker-образ, что и для ЛР, так как там уже предусмотрен spark.
+
+В качестве текста было вабрано начало НИР прошлого семестра по теме "Распределение вершин графа по гетерогенным хранилищам"
+
+Для начала читается текст файла по строкам командой:
+\begin{lstlisting}[language=python]
+    rdd = sc.textFile("/workspace/article.txt")
+\end{lstlisting}
+
+В качестве предобработки сначала строки очищаются от whitespace-символов по краям, преобразуются в нижний регистр, затем строки разделяются по пробелам на слова; далее отфильтровываются лишь слова из букв (в том числе и через тире) длиной более 3 символов с помощью регулярного выражения:
+\begin{lstlisting}[language=python]
+words = (rdd
+    .map(lambda x: x.strip())
+    .map(lambda x: x.lower())
+    .flatMap(lambda x: x.split()) # [“word1 word2”, ...] -> [“word1”, “word2”]
+    .filter(lambda x: re.match(r'^[A-Za-zА-Яа-я-]{4,}$', x))
+)
+\end{lstlisting}
+
+Далее подготавливается промежуточный RDD indexed, формируемый добавлением каждому элементу индекс; в результате вместо каждого элемента получается пара из индекса и элемента:
+\begin{lstlisting}[language=python]
+indexed = (words
+    .zipWithIndex()
+    .map(lambda x: (x[1], x[0]) # [(word, i), ...] -> [(i, word), ...]
+)
+\end{lstlisting}
+
+Для биграмм формируется другой RDD shifted, состоящий из тех же элементов indexed, у которых индекс смещён на 1:
+\begin{lstlisting}[language=python]
+shifted = (indexed
+    .map(lambda x: (x[0] - 1, x[1]))
+)
+\end{lstlisting}
+
+Далее, чтобы получить биграммы, промежуточный indexed и сдвинутый shifted группируются по ключу, которым выступают индексы, в результате чего и получается объединить все подряд идущие слова по парам; далее результат объединения превращается в одну строку из двух слов и отбрасываются  индексы:
+\begin{lstlisting}[language=python]
+bigrams = (indexed
+    .join(shifted) # -> [(i, [“word1”, “word2”]), ...]
+    .mapValues(lambda words: " ".join(words)) # -> [(i, “word1 word2”), ...]
+    .map(lambda x: x[1]) # -> [“word1 word2”, ...]
+)
+\end{lstlisting}
+
+Аналогичным образом для триграмм создаётся ещё один RDD со сдвигом индекса на 2 от первоначального значения:
+\begin{lstlisting}[language=python]
+shifted2 = (indexed
+    .map(lambda x: (x[0] - 2, x[1]))
+)
+\end{lstlisting}
+
+После чего аналогичным с биграммами образом объединяются сначала первые два RDD, затем с результатом объединяется ещё и третий RDD, благодаря чему получаются триграммы:
+\begin{lstlisting}[language=python]
+trigrams = (indexed
+    .join(shifted)
+    .mapValues(lambda words: " ".join(words))
+    .join(shifted2)
+    .mapValues(lambda words: " ".join(words))
+    .map(lambda x: x[1])
+)
+\end{lstlisting}
+
+Далее объявляется функция для подсчёта количества и сортировки по возрастанию:
+\begin{lstlisting}[language=python]
+def counted(rdd, ascending=False):
+    """Подсчёт количества элементов и сортировка: [(item, num), ...]"""
+    return (rdd
+        .map(lambda x: (x, 1))# добавляем 1 для суммы
+        .reduceByKey(lambda a, b: a + b)# складываем
+        .sortBy(lambda x: x[1], ascending=ascending) # сортировка по убыванию
+    )
+\end{lstlisting}
+И для получения требуемого результата выводятся 20 самых часто встречаемых биграмм и триграмм:
+\begin{lstlisting}[language=python]
+print(counted(bigrams).take(20))
+print(counted(trigrams).take(20))
+\end{lstlisting}
+\lstinputlisting[caption=Полный скрипт ЛР, language=python]{../scripts/lab2.py}
+% -------------------------------------------------------
+\newpage
+\section{Вывод}
+В ходе лабораторной работы приобретены навыки работы со Spark.
+%-----------------------------------------------------------------------------------------
+\newpage
+\section*{Приложение 1}
+\lstinputlisting[caption=Текст, style=text]{../scripts/lab2_text.txt}
+\newpage
+\section*{Приложение 2}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Диграммы} & \textbf{Триграммы} \\ 
+\hline
+распределения вершин (2) & между которые могут (2) \\
+между которые (2) & алгоритм роста графа (2) \\
+распределение графа (2) & распределения вершин графа (2) \\
+общей мощности (2) & edge matching выбор (2) \\
+алгоритм роста (2) & современные графовые базы (1) \\
+роста графа (2) & таких социальные рекомендательные (1) \\
+вершин графа (2) & реальном времени мере (1) \\
+основной операцией (2) & распределения требующих полного (1) \\
+вершин между (2) & предложений комбинированию подходов (1) \\
+graph growing (2) & реальной эксплуатации графовых (1) \\
+edge matching (2) & максимизации эффективности этой (1) \\
+функция улучшения (2) & чтобы минимизировать общую (1) \\
+пока будет (2) & первому также происходит (1) \\
+также стоит (2) & процессе порядок найденное (1) \\
+которые могут (2) & случайное затем случайное (1) \\
+matching выбор (2) & метод прост эффективен (1) \\
+современные графовые (1) & приводит большему общему (1) \\
+сталкиваются фундаментальной (1) & учитывает вершины изначального (1) \\
+распределение становится (1) & если противном выбранная (1) \\
+операцией является (1) & обмена вершин между (1) \\
+\hline
+\end{tabular}
+\caption{Частотный анализ диграмм и триграмм}
+\end{table}
+\end{document}

@@ -1,0 +1,31 @@
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{titletoc}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{etoolbox}
+\usepackage{subfig}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\def\textunderset#1#2{\leavevmode
+  \vtop{\offinterlineskip\halign{%
+    \hfil##\hfil\cr\strut#2\cr\noalign{\kern-.3ex}
+    \hidewidth\strut#1\hidewidth\cr}}}
+\def\signhrule{\raggedright\baselineskip30.0ex \vrule height 0.5pt width30mm depth0pt}
+
+
+\dottedcontents{section}[2.5em]{\bfseries}{2em}{0.5pc}
+\dottedcontents{subsection}[3em]{}{2em}{0.5pc}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true, %set true if you want colored links
+    linktoc=all,     %set to all if you want both sections and subsections linked
+    linkcolor=black,  %choose some color if you want links to stand out
+}
+
+\usepackage{verbatim}
+
+\usepackage{xcolor}
+\usepackage{pgffor}
+\usepackage{float}

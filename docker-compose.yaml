@@ -1,0 +1,12 @@
+version: "3.7"
+
+services:
+  spark:
+    container_name: spark
+    build:
+      context: ./for_install
+      dockerfile: ./Dockerfile
+    command: tail -F anything
+    network_mode: host
+    volumes:
+      - ./scripts:/scripts:Z

@@ -1,0 +1,1 @@
+sudo docker exec -i -t --user hduser spark /bin/bash
