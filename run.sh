@@ -6,4 +6,4 @@ fi
 
 sudo docker-compose down
 sudo docker-compose up -d --build
-sudo docker exec -i -t hadoop service ssh restart
+sudo docker exec -i -t spark service ssh restart

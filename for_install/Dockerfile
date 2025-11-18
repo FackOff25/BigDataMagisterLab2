@@ -46,3 +46,4 @@ RUN echo $(cat /opt/mapred-site.xml) >> /usr/local/hadoop/hadoop-2.9.2/etc/hadoo
 #Spark
 RUN pip3 install pyspark==3.5.0 --break-system-packages
 RUN pip3 install py4j --break-system-packages
+RUN pip3 install numpy --break-system-packages
